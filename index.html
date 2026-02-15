@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Creeper Clicker</title>
+<style>
+    body {
+        background: #111;
+        color: #00ff66;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 0;
+    }
+
+    h1 {
+        margin-top: 20px;
+    }
+
+    #scoreDisplay {
+        font-size: 28px;
+        margin: 10px;
+    }
+
+    #cpsDisplay {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #66ff99;
+    }
+
+    #creeperContainer {
+        position: relative;
+        display: inline-block;
+    }
+
+    #creeper {
+        width: 300px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .plusOne {
+        position: absolute;
+        color: #00ff66;
+        font-weight: bold;
+        pointer-events: none;
+        font-size: 20px;
+    }
+
+    #upgrades {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .upgrade {
+        background: #222;
+        border: 1px solid #00ff66;
+        padding: 10px;
+        width: 200px;
+    }
+
+    button {
+        background: #00aa44;
+        border: none;
+        padding: 5px 10px;
+        color: white;
+        cursor: pointer;
+        margin-top: 5px;
+    }
+
+    button:disabled {
+        background: #444;
+        cursor: not-allowed;
+    }
+</style>
+</head>
+<body>
+
+<h1>💚 Creeper Clicker 💚</h1>
+
+<div id="scoreDisplay">Score: 0</div>
+<div id="cpsDisplay">CPS: 0</div>
+
+<div id="creeperContainer">
+    <img id="creeper" 
+         src="https://upload.wikimedia.org/wikipedia/en/4/49/Creeper_%28Minecraft%29.png">
+</div>
+
+<div id="upgrades"></div>
+
+<script>
+let score = 0;
+let clickPower = 1;
+let cps = 0;
+
+const scoreDisplay = document.getElementById("scoreDisplay");
+const cpsDisplay = document.getElementById("cpsDisplay");
+const creeper = document.getElementById("creeper");
+const container = document.getElementById("creeperContainer");
+const upgradesDiv = document.getElementById("upgrades");
+
+function updateDisplay() {
+    scoreDisplay.textContent = "Score: " + Math.floor(score);
+    cpsDisplay.textContent = "CPS: " + cps;
+}
+
+function addScore(amount) {
+    score += amount;
+    updateDisplay();
+}
+
+creeper.addEventListener("click", function(e) {
+    addScore(clickPower);
+
+    const plus = document.createElement("div");
+    plus.textContent = "+" + clickPower;
+    plus.className = "plusOne";
+
+    const rect = container.getBoundingClientRect();
+    plus.style.left = (e.clientX - rect.left) + "px";
+    plus.style.top = (e.clientY - rect.top) + "px";
+
+    container.appendChild(plus);
+
+    setTimeout(() => plus.remove(), 500);
+});
+
+setInterval(() => {
+    addScore(cps / 10);
+}, 100);
+
+const upgrades = [
+    {
+        name: "Stronger Click",
+        description: "+1 per click",
+        baseCost: 10,
+        cost: 10,
+        action: () => clickPower++
+    },
+    {
+        name: "Baby Creeper",
+        description: "+1 CPS",
+        baseCost: 25,
+        cost: 25,
+        action: () => cps++
+    },
+    {
+        name: "Charged Creeper",
+        description: "+5 per click",
+        baseCost: 100,
+        cost: 100,
+        action: () => clickPower += 5
+    },
+    {
+        name: "Creeper Farm",
+        description: "+5 CPS",
+        baseCost: 250,
+        cost: 250,
+        action: () => cps += 5
+    },
+    {
+        name: "Nether Reactor",
+        description: "+20 CPS",
+        baseCost: 1000,
+        cost: 1000,
+        action: () => cps += 20
+    }
+];
+
+function renderUpgrades() {
+    upgradesDiv.innerHTML = "";
+
+    upgrades.forEach((upgrade, index) => {
+        const div = document.createElement("div");
+        div.className = "upgrade";
+
+        const title = document.createElement("div");
+        title.textContent = upgrade.name;
+
+        const desc = document.createElement("div");
+        desc.textContent = upgrade.description;
+
+        const cost = document.createElement("div");
+        cost.textContent = "Cost: " + upgrade.cost;
+
+        const button = document.createElement("button");
+        button.textContent = "Buy";
+
+        if (score < upgrade.cost) {
+            button.disabled = true;
+        }
+
+        button.onclick = () => {
+            if (score >= upgrade.cost) {
+                score -= upgrade.cost;
+                upgrade.action();
+                upgrade.cost = Math.floor(upgrade.cost * 1.5);
+                updateDisplay();
+                renderUpgrades();
+            }
+        };
+
+        div.appendChild(title);
+        div.appendChild(desc);
+        div.appendChild(cost);
+        div.appendChild(button);
+        upgradesDiv.appendChild(div);
+    });
+}
+
+setInterval(renderUpgrades, 500);
+
+updateDisplay();
+renderUpgrades();
+</script>
+
+</body>
+</html>
