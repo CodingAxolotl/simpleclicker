@@ -12,20 +12,10 @@
         margin: 0;
     }
 
-    h1 {
-        margin-top: 20px;
-    }
+    h1 { margin-top: 20px; }
 
-    #scoreDisplay {
-        font-size: 28px;
-        margin: 10px;
-    }
-
-    #cpsDisplay {
-        font-size: 18px;
-        margin-bottom: 20px;
-        color: #66ff99;
-    }
+    #scoreDisplay { font-size: 28px; margin: 10px; }
+    #cpsDisplay { font-size: 18px; margin-bottom: 20px; color: #66ff99; }
 
     #creeperContainer {
         position: relative;
@@ -84,7 +74,7 @@
 <div id="cpsDisplay">CPS: 0</div>
 
 <div id="creeperContainer">
-    <img id="creeper" 
+    <img id="creeper"
          src="https://upload.wikimedia.org/wikipedia/en/4/49/Creeper_%28Minecraft%29.png">
 </div>
 
@@ -101,14 +91,49 @@ const creeper = document.getElementById("creeper");
 const container = document.getElementById("creeperContainer");
 const upgradesDiv = document.getElementById("upgrades");
 
+/* ================= COOKIE SYSTEM ================= */
+
+function saveGame() {
+    const data = {
+        score,
+        clickPower,
+        cps,
+        upgrades: upgrades.map(u => u.cost)
+    };
+    document.cookie = "creeperSave=" + encodeURIComponent(JSON.stringify(data)) +
+        "; max-age=31536000; path=/";
+}
+
+function loadGame() {
+    const cookies = document.cookie.split("; ");
+    for (let c of cookies) {
+        if (c.startsWith("creeperSave=")) {
+            const data = JSON.parse(decodeURIComponent(c.split("=")[1]));
+            score = data.score || 0;
+            clickPower = data.clickPower || 1;
+            cps = data.cps || 0;
+            if (data.upgrades) {
+                data.upgrades.forEach((cost, i) => {
+                    if (upgrades[i]) upgrades[i].cost = cost;
+                });
+            }
+        }
+    }
+}
+
+/* ================= DISPLAY ================= */
+
 function updateDisplay() {
     scoreDisplay.textContent = "Score: " + Math.floor(score);
     cpsDisplay.textContent = "CPS: " + cps;
 }
 
+/* ================= SCORE ================= */
+
 function addScore(amount) {
     score += amount;
     updateDisplay();
+    saveGame();
 }
 
 creeper.addEventListener("click", function(e) {
@@ -123,47 +148,43 @@ creeper.addEventListener("click", function(e) {
     plus.style.top = (e.clientY - rect.top) + "px";
 
     container.appendChild(plus);
-
     setTimeout(() => plus.remove(), 500);
 });
 
 setInterval(() => {
-    addScore(cps / 10);
+    if (cps > 0) addScore(cps / 10);
 }, 100);
+
+/* ================= UPGRADES ================= */
 
 const upgrades = [
     {
         name: "Stronger Click",
         description: "+1 per click",
-        baseCost: 10,
         cost: 10,
         action: () => clickPower++
     },
     {
         name: "Baby Creeper",
         description: "+1 CPS",
-        baseCost: 25,
         cost: 25,
         action: () => cps++
     },
     {
         name: "Charged Creeper",
         description: "+5 per click",
-        baseCost: 100,
         cost: 100,
         action: () => clickPower += 5
     },
     {
         name: "Creeper Farm",
         description: "+5 CPS",
-        baseCost: 250,
         cost: 250,
         action: () => cps += 5
     },
     {
         name: "Nether Reactor",
         description: "+20 CPS",
-        baseCost: 1000,
         cost: 1000,
         action: () => cps += 20
     }
@@ -188,9 +209,7 @@ function renderUpgrades() {
         const button = document.createElement("button");
         button.textContent = "Buy";
 
-        if (score < upgrade.cost) {
-            button.disabled = true;
-        }
+        if (score < upgrade.cost) button.disabled = true;
 
         button.onclick = () => {
             if (score >= upgrade.cost) {
@@ -198,6 +217,7 @@ function renderUpgrades() {
                 upgrade.action();
                 upgrade.cost = Math.floor(upgrade.cost * 1.5);
                 updateDisplay();
+                saveGame();
                 renderUpgrades();
             }
         };
@@ -210,8 +230,7 @@ function renderUpgrades() {
     });
 }
 
-setInterval(renderUpgrades, 500);
-
+loadGame();
 updateDisplay();
 renderUpgrades();
 </script>
